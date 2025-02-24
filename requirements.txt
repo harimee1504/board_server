@@ -2,7 +2,6 @@ flask
 flask-cors
 ariadne
 SQLAlchemy
-mariadb
 clerk-backend-api
 python-dotenv
 bson

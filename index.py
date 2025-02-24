@@ -32,3 +32,6 @@ def graphql_server():
             "error": error["message"]
         })
     return jsonify(result)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=os.getenv("PORT")) 
