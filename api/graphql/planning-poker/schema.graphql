@@ -1,0 +1,25 @@
+input PlannerCreate {
+    sprint_id: ID!
+    user_stories: [ID]
+}
+
+type UserStory {
+    id: ID!
+    title: String!
+    description: String!
+    priority: String!
+    state: String!
+    assignedTo: String!
+    story_points: Int
+    hours_spent: Int
+    current_sprint: String!
+}
+
+type Planner {
+    initiated: Boolean!
+    user_stories: [UserStory]
+}
+
+extend type Mutation {
+    initiatePlanningSession(input: PlannerCreate) : Planner
+}

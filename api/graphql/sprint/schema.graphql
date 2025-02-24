@@ -1,0 +1,56 @@
+input SprintCreate {
+    title: String! 
+    description: String
+    initiative: ID!
+    startDate: Date!
+    endDate: Date!
+}
+
+input SprintUpdate {
+    id: ID!
+    title: String 
+    description: String
+    initiative: ID
+    startDate: Date
+    endDate: Date
+}
+
+input SprintDelete {
+    id: ID!
+}
+
+input SprintFilterOptions {
+    title: String
+    description: String
+    initiative: ID
+}
+
+input SprintFilter {
+    by: String!
+    options: SprintFilterOptions
+}
+
+type Sprint {
+    id: ID!
+    title: String
+    description: String
+    orgId: String
+    createdBy: User
+    updatedBy: User
+    createdAt: Date
+    updatedAt: Date
+    startDate: Date
+    endDate: Date
+    initiative: ID!
+    iteration: String
+}
+
+extend type Query {
+    getSprints(input: SprintFilter) : [Sprint]
+}
+
+extend type Mutation {
+    createSprint(input: SprintCreate) : Sprint
+    updateSprint(input: SprintUpdate) : Sprint
+    deleteSprint(input: SprintDelete) : Deleted
+}

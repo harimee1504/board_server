@@ -1,0 +1,62 @@
+input LeaveInput {
+    id: ID
+    date: Date
+    hours: Int
+    type: String
+    reason: String
+}
+
+input LeaveCreate {
+    user_id: ID!
+    leaves: [LeaveInput]
+}
+
+input LeaveUpdate {
+    id: ID!
+    user_id: ID!
+    leaves: [LeaveInput]
+}
+
+input LeaveDelete {
+    id: ID!
+    leaves: [LeaveInput]
+}
+
+input LeaveFilterOptions {
+    user_id: ID
+    status: String
+    leave_type: String
+    startDate: Date
+    endDate: Date
+}
+
+input LeaveFilter {
+    by: String!
+    options: LeaveFilterOptions
+}
+
+type LeaveDetails {
+    id: ID!
+    date: Date
+    hours: Int
+    type: String
+    status: String
+    reason: String
+    updatedAt: Date
+    updatedBy: String
+}
+
+type Leave {
+    user_id: ID!
+    leaveDetails: [LeaveDetails]
+}
+
+extend type Query {
+    getLeaves(input: LeaveFilter) : [Leave]
+}
+
+extend type Mutation {
+    createLeave(input: LeaveCreate) : Leave
+    updateLeave(input: LeaveUpdate) : Leave
+    deleteLeave(input: LeaveDelete) : Deleted
+}
