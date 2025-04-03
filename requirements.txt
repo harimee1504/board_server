@@ -1,6 +1,7 @@
 flask
 flask-cors
 ariadne
+graphql-core>=3.0.0
 SQLAlchemy
 clerk-backend-api
 python-dotenv
