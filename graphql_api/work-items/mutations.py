@@ -15,7 +15,7 @@ def resolve_create_work_item(_, __, input):
 @has_permission("org:board:update")
 def resolve_create_work_item(_, __, input):
     obj = UpdateWorkItem(input=input)
-    return obj.create()
+    return obj.update()
 
 @mutation.field("deleteWorkItem")
 @has_permission("org:board:delete")

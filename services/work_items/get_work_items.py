@@ -1,6 +1,6 @@
 from models import WorkItems
 from flask import session as flask_session
-from models.base import session
+from models.base import Session
 from graphql_api.users.queries import get_cached_users_dict
 from models.work_items.work_items import ItemType, State, Priority, StoryPoints
 
@@ -9,6 +9,7 @@ class GetWorkItems:
         self.org_id = flask_session["auth_state"]["org_id"]
                 
     def get(self):
+        session = Session()
         try:
             work_items = session.query(WorkItems).filter(WorkItems.org_id == self.org_id).all()
             new_work_items = []
@@ -23,7 +24,11 @@ class GetWorkItems:
                 temp["storyPoints"] = StoryPoints(temp["storyPoints"]).value if temp.get("storyPoints") else None
                 temp["parent"] = temp["parent"] if temp["parent"] is None else session.query(WorkItems).filter(WorkItems.id == temp["parent"]).first().to_dict()
                 new_work_items.append(temp)
+            session.commit()
             return new_work_items
         except Exception as e:
             print(e)
+            session.rollback()
             raise Exception("Failed to get work_items.")
+        finally:
+            session.close()

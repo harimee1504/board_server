@@ -1,6 +1,6 @@
 from datetime import datetime
 from models import Tags
-from models.base import session
+from models.base import Session
 from sqlalchemy import func
 from flask import session as flask_session
 
@@ -11,10 +11,12 @@ def create_tag(input):
     if not input["tag"]:
         raise Exception("Tag is required.")
     
-    get_tag = session.query(Tags).filter(Tags.org_id == org_id, func.lower(Tags.tag) == input["tag"].lower()).first()
-    if get_tag:
-        raise Exception("Tag already exists.")
+    session = Session()
     try:
+        get_tag = session.query(Tags).filter(Tags.org_id == org_id, func.lower(Tags.tag) == input["tag"].lower()).first()
+        if get_tag:
+            raise Exception("Tag already exists.")
+        
         new_tag = Tags(
             tag=input["tag"], 
             org_id=org_id,
@@ -30,3 +32,5 @@ def create_tag(input):
         print(e)
         session.rollback()
         raise Exception("Failed to create tag.")
+    finally:
+        session.close()

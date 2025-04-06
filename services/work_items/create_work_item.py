@@ -1,6 +1,6 @@
 from datetime import datetime
 from models import WorkItems, Tags
-from models.base import session
+from models.base import Session
 from flask import session as flask_session
 import uuid
 
@@ -17,7 +17,7 @@ class CreateWorkItem:
             "created_by": flask_session["auth_state"]["sub"],
             "updated_by": flask_session["auth_state"]["sub"],
             "org_id": flask_session["auth_state"]["org_id"],
-            "state": State.NEW
+            "state": State.NEW.value
         }
     def is_valid(self, value, enum):
         return value in [e.value for e in enum]
@@ -32,17 +32,18 @@ class CreateWorkItem:
             if not self.is_valid(self.input.get("priority"), Priority):
                 raise Exception("Invalid priority")
             else:
-                data["priority"] = Priority(self.input.get("priority"))
+                data["priority"] = Priority(self.input.get("priority")).value
         
         ts = datetime.now()
         
         data["created_at"] = ts
         data["updated_at"] = ts
-        data["type"] = ItemType.INITIATIVE
+        data["type"] = ItemType.INITIATIVE.value
             
         return data
 
     def epic(self):
+        session = Session()
         if not self.input.get("assignedTo"):
             raise Exception("Epic must have an assignee")
 
@@ -52,7 +53,7 @@ class CreateWorkItem:
             if not self.is_valid(self.input.get("priority"), Priority):
                 raise Exception("Invalid priority")
             else:
-                data["priority"] = Priority(self.input.get("priority"))
+                data["priority"] = Priority(self.input.get("priority")).value
 
         if not self.input.get("parent"):
             raise Exception("Epic must have a parent initiative")
@@ -62,19 +63,20 @@ class CreateWorkItem:
         if not initiative:
             raise Exception("Initiative not found")
         
-        if initiative.type != ItemType.INITIATIVE:
+        if initiative.type != ItemType.INITIATIVE.value:
             raise Exception("Parent must be an initiative")
         
         ts = datetime.now()
         
         data["created_at"] = ts
         data["updated_at"] = ts
-        data["type"] = ItemType.EPIC
+        data["type"] = ItemType.EPIC.value
         data["parent"] = initiative.id
-        
+        session.close()
         return data
 
     def feature(self):
+        session = Session()
         if not self.input.get("assignedTo"):
             raise Exception("Feature must have an assignee")
     
@@ -84,7 +86,7 @@ class CreateWorkItem:
             if not self.is_valid(self.input.get("priority"), Priority):
                 raise Exception("Invalid priority")
             else:
-                data["priority"] = Priority(self.input.get("priority"))
+                data["priority"] = Priority(self.input.get("priority")).value
 
         if not self.input.get("parent"):
             raise Exception("Feature must have a parent epic")
@@ -94,26 +96,27 @@ class CreateWorkItem:
         if not epic:
             raise Exception("Epic not found")
         
-        if epic.type != ItemType.EPIC:
+        if epic.type != ItemType.EPIC.value:
             raise Exception("Parent must be an epic")
         
         ts = datetime.now()
         
         data["created_at"] = ts
         data["updated_at"] = ts
-        data["type"] = ItemType.FEATURE
+        data["type"] = ItemType.FEATURE.value
         data["parent"] = epic.id
-        
+        session.close()
         return data
 
     def user_story(self):
+        session = Session()
         data = self.data
 
         if self.input.get("priority"):
             if not self.is_valid(self.input.get("priority"), Priority):
                 raise Exception("Invalid priority")
             else:
-                data["priority"] = Priority(self.input.get("priority"))
+                data["priority"] = Priority(self.input.get("priority")).value
 
         if self.input.get("state") and not self.is_valid(self.input.get("state"), State):
             raise Exception("Invalid state")
@@ -129,40 +132,43 @@ class CreateWorkItem:
                 raise Exception("UserStory must have a assignee if story points are provided")
             if not self.input.get("sprint"):
                 raise Exception("UserStory must be assigned to sprint if story points are provided")
-            data["story_points"] = StoryPoints[self.input.get("storyPoints")]
+            data["story_points"] = StoryPoints(self.input.get("storyPoints")).value
         else:    
             if self.input.get("state") and self.input.get("state") != State.BACKLOG.value:
                 raise Exception("UserStory must have story points if not in backlog")
-            data["state"] = State.BACKLOG
+            data["state"] = State.BACKLOG.value
         
         feature = session.query(WorkItems).filter(WorkItems.id == uuid.UUID(self.input.get("parent"))).first()
         
         if not feature:
             raise Exception("Feature not found")
         
-        if feature.type != ItemType.FEATURE:
+        if feature.type != ItemType.FEATURE.value:
             raise Exception("Parent must be an feature")
         
         ts = datetime.now()
         
         data["created_at"] = ts
         data["updated_at"] = ts
-        data["type"] = ItemType.USER_STORY
+        data["type"] = ItemType.USER_STORY.value
         data["parent"] = feature.id
-        
+        session.close()
         return data
 
     def task(self):
+        session = Session()
         data = self.data
 
         if self.input.get("priority"):
             if not self.is_valid(self.input.get("priority"), Priority):
                 raise Exception("Invalid priority")
             else:
-                data["priority"] = Priority(self.input.get("priority"))
+                data["priority"] = Priority(self.input.get("priority")).value
 
         if self.input.get("state") and not self.is_valid(self.input.get("state"), State):
             raise Exception("Invalid state")
+        else:
+            data["state"] = State(self.input.get("state")).value
 
         if not self.input.get("parent"):
             raise Exception("Task must have a parent user story")
@@ -178,28 +184,31 @@ class CreateWorkItem:
         if not user_story:
             raise Exception("UserStory not found")
         
-        if user_story.type != ItemType.USER_STORY:
+        if user_story.type != ItemType.USER_STORY.value:
             raise Exception("Parent must be an user story")
         
         ts = datetime.now()
         
         data["created_at"] = ts
         data["updated_at"] = ts
-        data["type"] = ItemType.TASK
+        data["type"] = ItemType.TASK.value
         data["parent"] = user_story.id
-        
+        session.close()
         return data
 
     def bug(self):
+        session = Session()
         data = self.data
         if self.input.get("priority"):
             if not self.is_valid(self.input.get("priority"), Priority):
                 raise Exception("Invalid priority")
             else:
-                data["priority"] = Priority(self.input.get("priority"))
+                data["priority"] = Priority(self.input.get("priority")).value
 
         if self.input.get("state") and not self.is_valid(self.input.get("state"), State):
             raise Exception("Invalid state")
+        else:
+            data["state"] = State(self.input.get("state")).value
 
         if not self.input.get("parent"):
             raise Exception("Bug must have a parent user story")
@@ -215,16 +224,16 @@ class CreateWorkItem:
         if not user_story:
             raise Exception("UserStory not found")
         
-        if user_story.type != ItemType.USER_STORY:
+        if user_story.type != ItemType.USER_STORY.value:
             raise Exception("Parent must be an user story")
         
         ts = datetime.now()
         
         data["created_at"] = ts
         data["updated_at"] = ts
-        data["type"] = ItemType.BUG
+        data["type"] = ItemType.BUG.value
         data["parent"] = user_story.id
-        
+        session.close()
         return data
 
     def get_data(self):
@@ -248,17 +257,19 @@ class CreateWorkItem:
                 raise Exception("Invalid WorkItem type")
                 
     def create(self):
-        data = self.get_data()
-        tags = []
+        session = Session()
         try:
+            data = self.get_data()
+            print(data)
+            tags = []
             new_work_item = WorkItems(**data)
             session.add(new_work_item)
             session.commit()
             result = new_work_item.to_dict()
             result["parent"] = result["parent"] if result["parent"] is None else session.query(WorkItems).filter(WorkItems.id == result["parent"]).first().to_dict()
-            result["createdBy"] = get_cached_users_dict(flask_session["auth_state"]["org_id"])[result["createdBy"]]
-            result["assignedTo"] = get_cached_users_dict(flask_session["auth_state"]["org_id"])[result["assignedTo"]]
-            result["updatedBy"] = get_cached_users_dict(flask_session["auth_state"]["org_id"])[result["updatedBy"]]
+            result["createdBy"] = get_cached_users_dict(self.org_id)[result["createdBy"]]
+            result["assignedTo"] = get_cached_users_dict(self.org_id)[result["assignedTo"]]
+            result["updatedBy"] = get_cached_users_dict(self.org_id)[result["updatedBy"]]
             return result
         except Exception as e:
             print(e)

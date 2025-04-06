@@ -1,6 +1,6 @@
 from datetime import datetime
 from models import Tags
-from models.base import session
+from models.base import Session
 from flask import session as flask_session
 from sqlalchemy import func
 import uuid
@@ -8,17 +8,19 @@ import uuid
 def update_tag(input):
     user_id = flask_session["auth_state"]["sub"]
     org_id = flask_session["auth_state"]["org_id"]
-    tag = session.query(Tags).filter(Tags.id == uuid.UUID(input["id"])).first()
-    if not tag:
-        raise Exception("Tag not found.")
     
-    get_tag = session.query(Tags).filter(Tags.org_id == org_id, func.lower(Tags.tag) == input["tag"].lower()).first()
-    
-    if get_tag and get_tag.id != input["id"]:
-        raise Exception("Tag already exists.")
-    
-    ts = datetime.now()
+    session = Session()
     try:
+        tag = session.query(Tags).filter(Tags.id == uuid.UUID(input["id"])).first()
+        if not tag:
+            raise Exception("Tag not found.")
+        
+        get_tag = session.query(Tags).filter(Tags.org_id == org_id, func.lower(Tags.tag) == input["tag"].lower()).first()
+        
+        if get_tag and get_tag.id != input["id"]:
+            raise Exception("Tag already exists.")
+        
+        ts = datetime.now()
         updated_tag = session.query(Tags).filter(Tags.id == uuid.UUID(input["id"])).update({
             "tag": input["tag"], 
             "updated_at": ts,
@@ -37,3 +39,5 @@ def update_tag(input):
         print(e)
         session.rollback()
         raise Exception("Failed to update tag.")
+    finally:
+        session.close()
