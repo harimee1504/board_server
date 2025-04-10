@@ -1,5 +1,5 @@
 from datetime import datetime
-from models import WorkItems, Tags
+from models import WorkItems, Tags, WorkItemTags
 from models.base import Session
 from flask import session as flask_session
 import uuid
@@ -19,6 +19,7 @@ class CreateWorkItem:
             "org_id": flask_session["auth_state"]["org_id"],
             "state": State.NEW.value
         }
+        self.tags = input.get("tags", [])
     def is_valid(self, value, enum):
         return value in [e.value for e in enum]
 
@@ -165,10 +166,11 @@ class CreateWorkItem:
             else:
                 data["priority"] = Priority(self.input.get("priority")).value
 
-        if self.input.get("state") and not self.is_valid(self.input.get("state"), State):
-            raise Exception("Invalid state")
-        else:
-            data["state"] = State(self.input.get("state")).value
+        if self.input.get("state"): 
+            if not self.is_valid(self.input.get("state"), State):
+                raise Exception("Invalid state")
+            else:
+                data["state"] = State(self.input.get("state")).value
 
         if not self.input.get("parent"):
             raise Exception("Task must have a parent user story")
@@ -205,10 +207,11 @@ class CreateWorkItem:
             else:
                 data["priority"] = Priority(self.input.get("priority")).value
 
-        if self.input.get("state") and not self.is_valid(self.input.get("state"), State):
-            raise Exception("Invalid state")
-        else:
-            data["state"] = State(self.input.get("state")).value
+        if self.input.get("state"):
+            if not self.is_valid(self.input.get("state"), State):
+                raise Exception("Invalid state")
+            else:
+                data["state"] = State(self.input.get("state")).value
 
         if not self.input.get("parent"):
             raise Exception("Bug must have a parent user story")
@@ -260,18 +263,35 @@ class CreateWorkItem:
         session = Session()
         try:
             data = self.get_data()
-            print(data)
-            tags = []
-            new_work_item = WorkItems(**data)
-            session.add(new_work_item)
+            work_item = WorkItems(**data)
+            session.add(work_item)
+            session.flush()  # Flush to get the work_item.id
+
+            # Handle tags if provided
+            if self.tags:
+                ts = datetime.now()
+                for tag_id in self.tags:
+                    tag = session.query(Tags).filter(Tags.id == uuid.UUID(tag_id)).first()
+                    if not tag:
+                        raise Exception(f"Tag with id {tag_id} not found")
+                    
+                    work_item_tag = WorkItemTags(
+                        work_item_id=work_item.id,
+                        tag_id=tag.id,
+                        created_at=ts,
+                        updated_at=ts
+                    )
+                    session.add(work_item_tag)
+
             session.commit()
-            result = new_work_item.to_dict()
+            result = work_item.to_dict()
             result["parent"] = result["parent"] if result["parent"] is None else session.query(WorkItems).filter(WorkItems.id == result["parent"]).first().to_dict()
-            result["createdBy"] = get_cached_users_dict(self.org_id)[result["createdBy"]]
-            result["assignedTo"] = get_cached_users_dict(self.org_id)[result["assignedTo"]]
-            result["updatedBy"] = get_cached_users_dict(self.org_id)[result["updatedBy"]]
+            result["createdBy"] = get_cached_users_dict(data["org_id"])[result["createdBy"]]
+            result["assignedTo"] = get_cached_users_dict(data["org_id"])[result["assignedTo"]]
+            result["updatedBy"] = get_cached_users_dict(data["org_id"])[result["updatedBy"]]
             return result
         except Exception as e:
-            print(e)
             session.rollback()
-            raise Exception("Failed to create work_item.")
+            raise e
+        finally:
+            session.close()

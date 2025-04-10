@@ -32,6 +32,12 @@ input WorkItemDelete {
     id: ID!
 }
 
+input WorkItemStateUpdate {
+    id: ID!
+    state: String!
+    org_id: String!
+}
+
 type WorkItemOverview {
     id: ID!
     u_id: String!
@@ -84,4 +90,5 @@ extend type Mutation {
     createWorkItem(input: WorkItemCreate) : WorkItem
     updateWorkItem(input: WorkItemUpdate) : WorkItem
     deleteWorkItem(input: WorkItemDelete) : Deleted
+    updateWorkItemState(input: WorkItemStateUpdate) : WorkItem
 }

@@ -1,6 +1,7 @@
 import uuid
 from enum import Enum as PyEnum
 from sqlalchemy import Column, String, DateTime, BIGINT, ForeignKey, Boolean, INTEGER, TEXT, CheckConstraint, text
+from sqlalchemy.orm import relationship
 
 from models.base import Base, UUIDType
 
@@ -63,6 +64,9 @@ class WorkItems(Base):
     definition_of_done = Column(TEXT, nullable=True)
     parent = Column(UUIDType, ForeignKey('work_items.id'), nullable=True)
 
+    # Relationship with tags
+    tags = relationship("WorkItemTags", back_populates="work_item", cascade="all, delete-orphan")
+
     __table_args__ = (
         CheckConstraint(
             text("state IS NULL OR state IN ('backlog', 'new', 'active', 'on_hold', 'in_test', 'accepted', 'rejected', 'closed')"),
@@ -106,5 +110,6 @@ class WorkItems(Base):
             "completed_estimate": self.completed_estimate,
             "acceptance_criteria": self.acceptance_criteria,
             "definition_of_done": self.definition_of_done,
-            "parent": self.parent
+            "parent": self.parent,
+            "tags": [work_item_tag.tag.to_dict() for work_item_tag in self.tags] if self.tags else []
         }

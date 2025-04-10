@@ -1,5 +1,5 @@
 from datetime import datetime
-from models import WorkItems
+from models import WorkItems, Tags, WorkItemTags
 from models.base import Session
 from flask import session as flask_session
 from graphql_api.users.queries import get_cached_users_dict
@@ -11,6 +11,7 @@ class UpdateWorkItem:
     def __init__(self, input):
         self.input = input
         self.data = {}
+        self.tags = input.get("tags", [])
         
         # Only include fields that are provided in the input
         if self.input.get("title"):
@@ -248,13 +249,34 @@ class UpdateWorkItem:
         try:
             data = self.get_data()
             work_item = session.query(WorkItems).filter(WorkItems.id == uuid.UUID(self.input['id'])).first()
-            if not work_item:
-                raise Exception("Work Item not found.")
             
-            # Only update fields that are provided in the data
+            if not work_item:
+                raise Exception("WorkItem not found")
+            
+            # Update work item fields
             for key, value in data.items():
                 setattr(work_item, key, value)
-            
+
+            # Handle tags if provided
+            if self.tags is not None:  # Only update tags if explicitly provided
+                # Remove existing tags
+                session.query(WorkItemTags).filter(WorkItemTags.work_item_id == work_item.id).delete()
+                
+                # Add new tags
+                ts = datetime.now()
+                for tag_id in self.tags:
+                    tag = session.query(Tags).filter(Tags.id == uuid.UUID(tag_id)).first()
+                    if not tag:
+                        raise Exception(f"Tag with id {tag_id} not found")
+                    
+                    work_item_tag = WorkItemTags(
+                        work_item_id=work_item.id,
+                        tag_id=tag.id,
+                        created_at=ts,
+                        updated_at=ts
+                    )
+                    session.add(work_item_tag)
+
             session.commit()
             result = work_item.to_dict()
             result["parent"] = result["parent"] if result["parent"] is None else session.query(WorkItems).filter(WorkItems.id == result["parent"]).first().to_dict()

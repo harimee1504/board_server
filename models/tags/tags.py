@@ -1,5 +1,6 @@
 import uuid
 from sqlalchemy import Column, String, DateTime
+from sqlalchemy.orm import relationship
 from models.base import Base, UUIDType
 
 class Tags(Base):
@@ -11,6 +12,9 @@ class Tags(Base):
     org_id = Column(String(100), nullable=False, index=True)
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
+
+    # Relationship with work items
+    work_items = relationship("WorkItemTags", back_populates="tag", cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
