@@ -84,6 +84,7 @@ type WorkItem {
 
 extend type Query {
     getWorkItems : [WorkItem]
+    getActiveUserStories : [WorkItem]
 }
 
 extend type Mutation {
