@@ -1,18 +1,12 @@
 input SprintCreate {
     title: String! 
     description: String
-    initiative: ID!
-    startDate: Date!
-    endDate: Date!
 }
 
 input SprintUpdate {
     id: ID!
     title: String 
     description: String
-    initiative: ID
-    startDate: Date
-    endDate: Date
 }
 
 input SprintDelete {
@@ -22,7 +16,6 @@ input SprintDelete {
 input SprintFilterOptions {
     title: String
     description: String
-    initiative: ID
 }
 
 input SprintFilter {
@@ -39,10 +32,9 @@ type Sprint {
     updatedBy: User
     createdAt: Date
     updatedAt: Date
-    startDate: Date
-    endDate: Date
-    initiative: ID!
+    initiative: ID
     iteration: String
+    current: Boolean
 }
 
 extend type Query {

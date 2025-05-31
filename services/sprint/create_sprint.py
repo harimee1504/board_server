@@ -11,14 +11,6 @@ def create_sprint(input):
 
     session = Session()
     try:
-        initiative = session.query(WorkItems).filter(WorkItems.id == UUID(input["initiative"]) , org_id == org_id).first()
-
-        if not initiative:
-            raise Exception("Initiative not found.")
-        
-        if initiative.type != ItemType.INITIATIVE:
-            raise Exception("Parent must be an initiative")
-        
         current_sprint = session.query(Sprints).filter(Sprints.current == True, Sprints.org_id == org_id).first()
 
         if not current_sprint:
@@ -46,8 +38,7 @@ def create_sprint(input):
             updated_at=ts,
             iteration=iteration,
             start_date=start_date,
-            end_date=end_date,
-            initiative=UUID(input["initiative"]),
+            end_date=end_date
         )
         session.add(new_sprint)
         session.commit()
