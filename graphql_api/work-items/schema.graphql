@@ -92,6 +92,7 @@ type WorkItem {
 extend type Query {
     getWorkItems : [WorkItem]
     getActiveUserStories : [WorkItem]
+    getSprintUserStories(sprintId: ID!) : [WorkItem]
 }
 
 extend type Mutation {
