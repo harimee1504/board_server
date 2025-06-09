@@ -44,6 +44,7 @@ def create_sprint(input):
         result = new_sprint.to_dict()
         result["createdBy"] = get_cached_users_dict(org_id)[result["createdBy"]]
         result["updatedBy"] = get_cached_users_dict(org_id)[result["updatedBy"]]
+        return result
     except Exception as e:
         print(e)
         session.rollback()
