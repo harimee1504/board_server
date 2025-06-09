@@ -42,6 +42,7 @@ input WorkItemUpdateStoryPoints {
     id: ID!
     story_points: Int!
     org_id: String!
+    sprint: ID!
 }
 
 type WorkItemOverview {

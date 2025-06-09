@@ -12,6 +12,7 @@ class UpdateWorkItemStoryPoints:
         self.input = input
         self.data = {
             "story_points": input.get("story_points"),
+            "sprint": input.get("sprint"),
             "updated_by": flask_session["auth_state"]["sub"],
             "updated_at": datetime.now()
         }
@@ -40,8 +41,14 @@ class UpdateWorkItemStoryPoints:
             if work_item.type != ItemType.USER_STORY.value:
                 raise Exception("Story points can only be set for user stories")
 
-            # Update work item story points
+            # Update work item story points and sprint
             work_item.story_points = self.input.get("story_points")
+            work_item.current_sprint = uuid.UUID(self.input.get("sprint"))
+            
+            # Set initial_sprint if it's empty
+            if not work_item.initial_sprint:
+                work_item.initial_sprint = uuid.UUID(self.input.get("sprint"))
+                
             work_item.updated_by = self.data["updated_by"]
             work_item.updated_at = self.data["updated_at"]
 
