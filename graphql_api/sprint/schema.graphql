@@ -1,6 +1,7 @@
 input SprintCreate {
     title: String! 
     description: String
+    duration: Int!
 }
 
 input SprintUpdate {
@@ -35,6 +36,8 @@ type Sprint {
     initiative: ID
     iteration: String
     current: Boolean
+    startDate: Date
+    endDate: Date
 }
 
 extend type Query {

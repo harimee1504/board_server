@@ -4,6 +4,7 @@ from models.base import Session
 from uuid import UUID
 from flask import session as flask_session
 from models.work_items.work_items import ItemType
+from graphql_api.users.queries import get_cached_users_dict
 
 def create_sprint(input):
     user_id = flask_session["auth_state"]["sub"]
@@ -11,20 +12,18 @@ def create_sprint(input):
 
     session = Session()
     try:
-        current_sprint = session.query(Sprints).filter(Sprints.current == True, Sprints.org_id == org_id).first()
+        # Check if sprint with same name exists
+        existing_sprint = session.query(Sprints).filter(
+            Sprints.title.ilike(input["title"]),
+            Sprints.org_id == org_id
+        ).first()
+        
+        if existing_sprint:
+            raise Exception("A sprint with this name already exists")
 
-        if not current_sprint:
-            iteration = 1
-            start_date = date.today()
-            end_date = start_date + timedelta(days=14)
-        else:
-            iteration = current_sprint.iteration + 1
-            if current_sprint.end_date < date.today():
-                current_sprint.current = False
-                start_date = date.today()
-                end_date = start_date + timedelta(days=14)
-            else:
-                raise Exception("Current sprint is not completed.")
+        iteration = 1
+        start_date = date.today()
+        end_date = start_date + timedelta(days=input["duration"])
 
         ts = datetime.now()
         new_sprint = Sprints(
@@ -42,7 +41,9 @@ def create_sprint(input):
         )
         session.add(new_sprint)
         session.commit()
-        return new_sprint.to_dict()
+        result = new_sprint.to_dict()
+        result["createdBy"] = get_cached_users_dict(org_id)[result["createdBy"]]
+        result["updatedBy"] = get_cached_users_dict(org_id)[result["updatedBy"]]
     except Exception as e:
         print(e)
         session.rollback()

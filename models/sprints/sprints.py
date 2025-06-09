@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, Integer
+from sqlalchemy import Column, String, DateTime, Boolean, ForeignKey, Integer, Date
 import uuid
 
 from models.base import Base, UUIDType
@@ -15,6 +15,8 @@ class Sprints(Base):
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
     iteration = Column(Integer, nullable=False)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
 
     def to_dict(self):
         return {
@@ -26,5 +28,7 @@ class Sprints(Base):
             "orgId": self.org_id,
             "createdAt": self.created_at,
             "updatedAt": self.updated_at,
-            "iteration": self.iteration
+            "iteration": self.iteration,
+            "startDate": self.start_date,
+            "endDate": self.end_date
         }
