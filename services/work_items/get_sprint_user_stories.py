@@ -19,35 +19,73 @@ class GetSprintUserStories:
                 WorkItems.current_sprint == self.sprint_id
             ).all()
             
-            # Filter for user stories and their children
-            user_stories = []
+            # Get all user stories and their children (tasks and bugs)
+            result_items = []
+            user_story_ids = set()  # Keep track of user story IDs
+            
+            # First pass: collect all user stories and their IDs
             for work_item in work_items:
-                temp = work_item.to_dict()
-                
-                # Add user information
-                temp["createdBy"] = get_cached_users_dict(self.org_id)[temp["createdBy"]]
-                temp["updatedBy"] = get_cached_users_dict(self.org_id)[temp["updatedBy"]]
-                temp["assignedTo"] = get_cached_users_dict(self.org_id)[temp["assignedTo"]]
-                
-                # Convert enums to values
-                temp["type"] = ItemType(temp["type"]).value if temp.get("type") else None
-                temp["state"] = State(temp["state"]).value if temp.get("state") else None
-                temp["priority"] = Priority(temp["priority"]).value if temp.get("priority") else None
-                temp["storyPoints"] = StoryPoints(temp["storyPoints"]).value if temp.get("storyPoints") else None
-                
-                # Add parent information if it exists
-                temp["parent"] = temp["parent"] if temp["parent"] is None else session.query(WorkItems).filter(WorkItems.id == temp["parent"]).first().to_dict()
-                
-                # Add tags
-                temp["tags"] = [work_item_tag.tag.to_dict() for work_item_tag in work_item.tags] if work_item.tags else []
-                
-                # Add mentions
-                temp["mentions"] = [get_cached_users_dict(self.org_id)[mention] for mention in temp.get("mentions", [])]
-                
-                user_stories.append(temp)
+                if work_item.type == ItemType.USER_STORY.value:
+                    user_story_ids.add(work_item.id)
+                    temp = work_item.to_dict()
+                    
+                    # Add user information
+                    temp["createdBy"] = get_cached_users_dict(self.org_id)[temp["createdBy"]]
+                    temp["updatedBy"] = get_cached_users_dict(self.org_id)[temp["updatedBy"]]
+                    temp["assignedTo"] = get_cached_users_dict(self.org_id)[temp["assignedTo"]]
+                    
+                    # Convert enums to values
+                    temp["type"] = ItemType(temp["type"]).value if temp.get("type") else None
+                    temp["state"] = State(temp["state"]).value if temp.get("state") else None
+                    temp["priority"] = Priority(temp["priority"]).value if temp.get("priority") else None
+                    temp["storyPoints"] = StoryPoints(temp["storyPoints"]).value if temp.get("storyPoints") else None
+                    
+                    # Add parent information if it exists
+                    temp["parent"] = temp["parent"] if temp["parent"] is None else session.query(WorkItems).filter(WorkItems.id == temp["parent"]).first().to_dict()
+                    
+                    # Add tags
+                    temp["tags"] = [work_item_tag.tag.to_dict() for work_item_tag in work_item.tags] if work_item.tags else []
+                    
+                    # Add mentions
+                    temp["mentions"] = [get_cached_users_dict(self.org_id)[mention] for mention in temp.get("mentions", [])]
+                    
+                    result_items.append(temp)
+            
+            # Second pass: collect all tasks and bugs that belong to the user stories
+            for work_item in work_items:
+                child_work_items = session.query(WorkItems).filter(
+                    WorkItems.org_id == self.org_id,
+                    WorkItems.parent == work_item.id
+                ).all()
+                for child_work_item in child_work_items:
+                    if (child_work_item.type in [ItemType.TASK.value, ItemType.BUG.value] and 
+                        child_work_item.parent in user_story_ids):
+                        temp = child_work_item.to_dict()
+                        
+                        # Add user information
+                        temp["createdBy"] = get_cached_users_dict(self.org_id)[temp["createdBy"]]
+                        temp["updatedBy"] = get_cached_users_dict(self.org_id)[temp["updatedBy"]]
+                        temp["assignedTo"] = get_cached_users_dict(self.org_id)[temp["assignedTo"]]
+                        
+                        # Convert enums to values
+                        temp["type"] = ItemType(temp["type"]).value if temp.get("type") else None
+                        temp["state"] = State(temp["state"]).value if temp.get("state") else None
+                        temp["priority"] = Priority(temp["priority"]).value if temp.get("priority") else None
+                        temp["storyPoints"] = StoryPoints(temp["storyPoints"]).value if temp.get("storyPoints") else None
+                        
+                        # Add parent information
+                        temp["parent"] = session.query(WorkItems).filter(WorkItems.id == temp["parent"]).first().to_dict()
+                        
+                        # Add tags
+                        temp["tags"] = [work_item_tag.tag.to_dict() for work_item_tag in work_item.tags] if work_item.tags else []
+                        
+                        # Add mentions
+                        temp["mentions"] = [get_cached_users_dict(self.org_id)[mention] for mention in temp.get("mentions", [])]
+                        
+                        result_items.append(temp)
                 
             session.commit()
-            return user_stories
+            return result_items
         except Exception as e:
             print(e)
             session.rollback()
