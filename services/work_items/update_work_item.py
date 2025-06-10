@@ -20,6 +20,10 @@ class UpdateWorkItem:
             self.data["description"] = self.input.get("description")
         if self.input.get("assignedTo"):
             self.data["assigned_to"] = self.input.get("assignedTo")
+        if self.input.get("completed_estimate") is not None:
+            self.data["completed_estimate"] = self.input.get("completed_estimate")
+        if self.input.get("remaining_estimate") is not None:
+            self.data["remaining_estimate"] = self.input.get("remaining_estimate")
         
         # Always update the updated_by field
         self.data["updated_by"] = flask_session["auth_state"]["sub"]
@@ -170,6 +174,9 @@ class UpdateWorkItem:
         # Handle original estimate if provided
         if self.input.get("original_estimate"):
             data["original_estimate"] = self.input.get("original_estimate")
+            # If original estimate is updated, recalculate remaining estimate
+            if self.input.get("completed_estimate") is not None:
+                data["remaining_estimate"] = max(0, data["original_estimate"] - self.input.get("completed_estimate"))
         
         # Handle parent if provided
         if self.input.get("parent"):
@@ -206,6 +213,9 @@ class UpdateWorkItem:
         # Handle original estimate if provided
         if self.input.get("original_estimate"):
             data["original_estimate"] = self.input.get("original_estimate")
+            # If original estimate is updated, recalculate remaining estimate
+            if self.input.get("completed_estimate") is not None:
+                data["remaining_estimate"] = max(0, data["original_estimate"] - self.input.get("completed_estimate"))
         
         # Handle parent if provided
         if self.input.get("parent"):
@@ -248,7 +258,10 @@ class UpdateWorkItem:
         session = Session()
         try:
             data = self.get_data()
-            work_item = session.query(WorkItems).filter(WorkItems.id == uuid.UUID(self.input['id'])).first()
+            work_item = session.query(WorkItems).filter(
+                WorkItems.id == uuid.UUID(self.input['id']),
+                WorkItems.org_id == self.input['org_id']
+            ).first()
             
             if not work_item:
                 raise Exception("WorkItem not found")
@@ -280,9 +293,9 @@ class UpdateWorkItem:
             session.commit()
             result = work_item.to_dict()
             result["parent"] = result["parent"] if result["parent"] is None else session.query(WorkItems).filter(WorkItems.id == result["parent"]).first().to_dict()
-            result["createdBy"] = get_cached_users_dict(flask_session["auth_state"]["org_id"])[result["createdBy"]]
-            result["assignedTo"] = get_cached_users_dict(flask_session["auth_state"]["org_id"])[result["assignedTo"]]
-            result["updatedBy"] = get_cached_users_dict(flask_session["auth_state"]["org_id"])[result["updatedBy"]]
+            result["createdBy"] = get_cached_users_dict(self.input["org_id"])[result["createdBy"]]
+            result["assignedTo"] = get_cached_users_dict(self.input["org_id"])[result["assignedTo"]]
+            result["updatedBy"] = get_cached_users_dict(self.input["org_id"])[result["updatedBy"]]
             return result
         except Exception as e:
             print(e)

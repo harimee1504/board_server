@@ -6,7 +6,8 @@ from services.work_items import (
     UpdateWorkItem, 
     DeleteWorkItem, 
     UpdateWorkItemState,
-    UpdateWorkItemStoryPoints
+    UpdateWorkItemStoryPoints,
+    UpdateWorkItemEstimates
 )
 
 mutation = MutationType()
@@ -39,6 +40,12 @@ def resolve_update_work_item_state(_, __, input):
 @has_permission("org:board:update")
 def resolve_update_work_item_story_points(_, __, input):
     obj = UpdateWorkItemStoryPoints(input=input)
+    return obj.update()
+
+@mutation.field("updateWorkItemEstimates")
+@has_permission("org:board:update")
+def resolve_update_work_item_estimates(_, __, input):
+    obj = UpdateWorkItemEstimates(input=input)
     return obj.update()
     
 resolvers = [mutation]

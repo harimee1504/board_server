@@ -17,15 +17,18 @@ input WorkItemUpdate {
     title: String
     description: String
     state: String
-    type: String!
+    type: String
     assignedTo: String
     sprint: ID
     priority: String
     storyPoints: Int
     original_estimate: Int
+    completed_estimate: Int
+    remaining_estimate: Int
     parent: ID
     mentions: [String]
     tags: [String]
+    org_id: String
 }
 
 input WorkItemDelete {
@@ -43,6 +46,12 @@ input WorkItemUpdateStoryPoints {
     story_points: Int!
     org_id: String!
     sprint: ID!
+}
+
+input UpdateWorkItemEstimatesInput {
+    id: ID!
+    org_id: ID!
+    completed_estimate: Float!
 }
 
 type WorkItemOverview {
@@ -101,4 +110,5 @@ extend type Mutation {
     deleteWorkItem(input: WorkItemDelete) : Deleted
     updateWorkItemState(input: WorkItemStateUpdate) : WorkItem
     updateWorkItemStoryPoints(input: WorkItemUpdateStoryPoints) : WorkItem
+    updateWorkItemEstimates(input: UpdateWorkItemEstimatesInput!): WorkItem!
 }
