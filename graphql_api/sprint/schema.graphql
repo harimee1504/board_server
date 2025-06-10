@@ -4,6 +4,13 @@ input SprintCreate {
     duration: Int!
 }
 
+input SprintIterationCreate {
+    title: String!
+    description: String
+    duration: Int!
+    previousSprintId: ID!
+}
+
 input SprintUpdate {
     id: ID!
     title: String 
@@ -46,6 +53,7 @@ extend type Query {
 
 extend type Mutation {
     createSprint(input: SprintCreate) : Sprint
+    createSprintIteration(input: SprintIterationCreate) : Sprint
     updateSprint(input: SprintUpdate) : Sprint
     deleteSprint(input: SprintDelete) : Deleted
 }
